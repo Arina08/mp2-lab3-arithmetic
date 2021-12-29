@@ -7,7 +7,7 @@ void Arithmetic::stringToTerm(string &expression)
 	unsigned i = 0;
 	while (i < length) {
 		if (expression[i] == ' ') i++; // пропускаем пробелы
-		if (expression[i] == '+' || expression[i] == '*' || expression[i] == '/') { // обработка плюс, минус, деление
+		if (expression[i] == '+' || expression[i] == '*' || expression[i] == '/') { // обработка плюс, умножение, деление
 			Term operation(expression[i]);
 			terms.push_back(operation);
 			i++;
@@ -139,7 +139,7 @@ bool checkBrackets(const string &s)
 		if (s[i] == '(') {
 			count++;
 			flag = false;
-			if (i < stringSize && s[i + 1] == '+' || s[i + 1] == '-' || s[i + 1] == '*' || s[i + 1] == '/') {
+			if (i < stringSize && s[i + 1] == '+' || s[i + 1] == '*' || s[i + 1] == '/') {
 				throw "Operation after opening bracket";
 			}
 			if (i > 0 && s[i - 1] >= '0' && s[i] <= '9') {
