@@ -5,6 +5,9 @@ private:
 	int stackSize;
 	int top;
 	T *data;
+	void clear();
+	bool isEmpty();
+	bool isFull();
 public:
 	// constructors
 	Stack() { stackSize = 100; data = new T[stackSize]; top = -1; }
@@ -17,10 +20,7 @@ public:
 	T getTop();
 	T getSize();
 	T pop();
-	void push(const T &x);
-	void clear();
-	bool isEmpty();
-	bool isFull();
+	void push(const T &x);	
 };
 
 template <class T>
