@@ -12,29 +12,29 @@ class Term
 {
 private:
 	char operation;
-	double value;
-	bool type;
+	double isValue;
+	bool isType;
 public:
 	Term() = default;
-	Term(const double &_value) {
-		value = _value;
-		type = true;
+	Term(const double &_isValue) {
+		isValue = _isValue;
+		isType = true;
 	}
 	Term(const char &_operation) {
 		operation = _operation;
-		type = false;
+		isType = false;
 	}
 	void printTerm() {
-		if (type) {
-			std::cout << value << " ";
+		if (isType) {
+			std::cout << isValue << " ";
 		}
 		else {
 			std::cout << operation << " ";
 		}
 	}
-	double getValue() { return value; }
+	double getValue() { return isValue; }
 	char getOperation() { return operation; }
-	bool getType() { return type; }
+	bool getType() { return isType; }
 
 	int priority();
 };
