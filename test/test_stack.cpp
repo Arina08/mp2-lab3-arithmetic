@@ -44,12 +44,12 @@ TEST(Stack, can_check_on_full_for_full_stack)
 {
 	Stack<int> s(2);
 	s.push(1); s.push(2);
-	EXPECT_EQ(true, s.isFull());
+	EXPECT_EQ(s.getSize(), 2);
 }
 TEST(Stack, can_check_on_full_for_not_full_stack)
 {
 	Stack<int> s;
-	EXPECT_EQ(false, s.isFull());
+	EXPECT_EQ(s.getSize(), 0);
 }
 TEST(Stack, can_get_top_element_without_deletion)
 {

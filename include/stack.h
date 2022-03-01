@@ -5,20 +5,20 @@ private:
 	int stackSize;
 	int top;
 	T *data;
-	void clear();
-	bool isEmpty();
 	bool isFull();
 public:
 	// constructors
 	Stack() { stackSize = 100; data = new T[stackSize]; top = -1; }
 	Stack(int _size) 
 	{ 
-		if (!_size) throw "Stack can't have null size";
+		if (_size <= 0) throw "Stack can't have non-positive size";
 		stackSize = _size; data = new T[stackSize]; top = -1;
 	}
 	// methods
+	void clear();
+	bool isEmpty();
 	T getTop();
-	T getSize();
+	int getSize();
 	T pop();
 	void push(const T &x);	
 };
@@ -32,7 +32,7 @@ void Stack<T>::clear()
 }
 
 template<class T> 
-T Stack<T>::getSize() 
+int Stack<T>::getSize() 
 {
 	return top + 1;
 }

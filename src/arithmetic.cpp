@@ -1,40 +1,55 @@
 ﻿#include "../include/arithmetic.h"
-void Arithmetic::stringToTerm(string &expression)
+
+int Term::priority()
+{
+	if (operation == '(' || operation == ')') { return 0; }
+	else if (operation == '+' || operation == '-') { return 1; }
+	else if (operation == '*' || operation == '/') { return 2; }
+	else if (operation == '_') { return 3; }
+	else throw "Priority problem";
+}
+
+bool Arithmetic::hasVariables() {
+	return !variables.empty();
+}
+
+Arithmetic::Arithmetic(const string &expression) {
+	stringToTerm(expression);
+	if (terms.empty())
+		throw "Expression is empty";
+	isCorrect();
+	termToPostfix();
+}
+
+void Arithmetic::stringToTerm(const string &expression)
 {
 	unsigned length = expression.length();
 	string stringForNumber;
+	string stringForVariable;
 	double doubleNumber;
 	unsigned i = 0;
 	while (i < length) {
-		if (expression[i] == ' ') i++; // пропускаем пробелы
+		while (expression[i] == ' ') i++; // пропускаем пробелы
 		if (expression[i] == '+' || expression[i] == '*' || expression[i] == '/') { // обработка плюс, умножение, деление
 			Term operation(expression[i]);
 			terms.push_back(operation);
 			i++;
 		}
 		else if (expression[i] == '-') {
-			if (i == 0) {
-				Term unary_minus('_');
-				terms.push_back(unary_minus);
-				i++;
-				continue;
+			if (terms.empty() || terms.back().isValue() == false) {
+				terms.push_back(Term('_'));
 			}
-			if (i > 0) {
-				if (terms[i - 1].getOperation() != ')' && terms[i - 1].getType() == false) {
-					Term unary_minus('_');
-					terms.push_back(unary_minus);
-					i++;
-				}
-				else {
-					Term minus('-');
-					terms.push_back(minus);
-					i++;
-				}
+			else
+				terms.push_back(Term('-'));
+			i++;
+			while (i < expression.size() && expression[i] == '-') {
+				i++;
+				terms.push_back(Term('_'));
 			}
 		}
-		else if (expression[i] >= '0' && expression[i] <= '9' || (expression[i] == '.')) { // обработка чисел
+		else if (expression[i] >= '0' && expression[i] <= '9' || expression[i] == '.') { // обработка чисел
 			int pointCounter = 0;
-			while (expression[i] >= '0' && expression[i] <= '9' || (expression[i] == '.')) {
+			while (i < expression.size() && (expression[i] >= '0' && expression[i] <= '9' || expression[i] == '.')) {
 				stringForNumber += expression[i];
 				i++;
 				if (expression[i] == '.') {
@@ -44,25 +59,77 @@ void Arithmetic::stringToTerm(string &expression)
 					throw "You have more than one point in the number";
 				}
 			}
-			doubleNumber = stof(stringForNumber);
+			doubleNumber = stod(stringForNumber);
 			Term number(doubleNumber);
 			terms.push_back(number);
 			stringForNumber.clear(); // очищаем строку для будущих значений
+		}
+		else if (expression[i] >= 'a' && expression[i] <= 'z' || expression[i] >= 'A' && expression[i] <= 'Z') { // обработка переменных
+			while (i < expression.size() && (expression[i] >= 'a' && expression[i] <= 'z' || expression[i] >= 'A' && expression[i] <= 'Z')) {
+				stringForVariable += expression[i];
+				i++;
+			}
+			Term variable(stringForVariable);
+			terms.push_back(variable);
+			variables.insert(stringForVariable);
+			stringForVariable.clear();
 		}
 		else if (expression[i] == ')' || expression[i] == '(') {
 			Term bracket(expression[i]);
 			terms.push_back(bracket);
 			i++;
 		}
+		else
+			throw "String has unknown symbol";
 	}
 }
+
+void Arithmetic::isCorrect()
+{
+	Term last_term = Term('(');
+	Term current_term;
+	Stack<char> brackets;
+	for (int i = 0; i < terms.size(); i++) {
+		current_term = terms[i];
+		char operation = current_term.getOperation();
+		if (last_term.isValue() == true) {
+			if (current_term.isValue() == true || operation == '(')
+				throw "Number or opening bracket can't be after number";
+		}
+		else if (last_term.getOperation() == '(') {
+			if (current_term.isValue() == false && (operation == ')' || operation != '_' && operation != '('))
+				throw "Binary operation or closing bracket can't be after opening bracket";
+		}
+		else if (last_term.getOperation() == ')') {
+			if (last_term.isValue() == true || operation == '(')
+				throw "Number or opening bracket can't be after closing bracket";
+		}
+		else {
+			if (current_term.isValue() == false && operation != '(' && operation != '_')
+				throw "Closing bracket or binary operation can't be after operation";
+		}
+		if (current_term.getOperation() == '(')
+			brackets.push('(');
+		else if (current_term.getOperation() == ')') {
+			if (brackets.isEmpty())
+				throw "Expression has unpaired brackets";
+			brackets.pop();
+		}
+		last_term = current_term;
+	}
+	if (last_term.isValue() == false && last_term.getOperation() != ')')
+		throw "Expression must end with a number or closing bracket";
+	if (!brackets.isEmpty())
+		throw "Expression has unpaired brackets";
+}
+
 void Arithmetic::termToPostfix()
 {
 	unsigned size = terms.size();
 	vector <Term> postfix;
 	Stack <Term> operations;
 	for (unsigned i = 0; i < size; i++) {
-		if (terms[i].getType() == true) { // если нам встретилось число
+		if (terms[i].isValue() == true) { // если нам встретилось число
 			postfix.push_back(terms[i]); // помещаем число в выходную строку в виде Term
 		}
 		// если встретилась операция
@@ -79,7 +146,7 @@ void Arithmetic::termToPostfix()
 				continue;
 			}
 			
-			if (i > 0 && terms[i].getOperation() == '_' && terms[i].getOperation() == '_') {
+			if (i > 0 && terms[i].getOperation() == '_') {
 				operations.push(terms[i]);
 			}
 			else {
@@ -96,15 +163,43 @@ void Arithmetic::termToPostfix()
 	terms = postfix;
 }
 double Arithmetic::calculate()
-{
+{	
+	auto termsCopy = terms;
+	// сначала нужно ввести значения переменных
+	if (!variables.empty()) {
+		std::cout << "Enter values of variables:" << std::endl;
+		for (auto it = variables.begin(); it != variables.end(); it++) {
+			string variableName = *it;
+			string variableValue;
+			double value;
+			bool success = false;
+
+			do {
+				std::cout << variableName << " = ";
+				getline(std::cin, variableValue);
+				try {
+					value = std::stod(variableValue);
+					success = true;
+				}
+				catch (...) {
+					std::cout << "Incorrect input, enter value again" << std::endl;
+				}
+			} while (!success);
+			for (int i = 0; i < termsCopy.size(); i++) {
+				if (termsCopy[i].getVariableName() == variableName)
+					termsCopy[i].SetValue(value);
+			}
+		}
+	}
+
 	Stack <Term> stack;
 	Term termOperand1, termOperand2;
 	double operand1, operand2, res;
-	for (unsigned i = 0; i < terms.size(); i++) {
-		if (terms[i].getType() == true) {
-			stack.push(terms[i].getValue());
+	for (unsigned i = 0; i < termsCopy.size(); i++) {
+		if (termsCopy[i].isValue() == true) {
+			stack.push(termsCopy[i].getValue());
 		}
-		else if (terms[i].getOperation() == '_') {
+		else if (termsCopy[i].getOperation() == '_') {
 			res = (-1)*stack.pop().getValue();
 			stack.push(res);
 			continue;
@@ -114,14 +209,14 @@ double Arithmetic::calculate()
 			termOperand1 = stack.pop();
 			operand1 = termOperand1.getValue();
 			operand2 = termOperand2.getValue();
-			if (terms[i].getOperation() == '+')
+			if (termsCopy[i].getOperation() == '+')
 				res = operand1 + operand2;
-			if (terms[i].getOperation() == '-')
+			if (termsCopy[i].getOperation() == '-')
 				res = operand1 - operand2;
-			if (terms[i].getOperation() == '*')
+			if (termsCopy[i].getOperation() == '*')
 				res = operand1 * operand2;
-			if (terms[i].getOperation() == '/') {
-				if (operand2 == 0) throw "Division by the zero";
+			if (termsCopy[i].getOperation() == '/') {
+				if (abs(operand2) < 1e-9) throw "Division by the zero";
 				res = operand1 / operand2;
 			}
 
@@ -130,71 +225,4 @@ double Arithmetic::calculate()
 	}
 	Term result = stack.pop();
 	return result.getValue();
-}
-bool checkBrackets(const string &s)
-{
-	bool flag = true;
-	int count = 0, stringSize = s.length();
-	for (int i = 0; i < stringSize; i++) {
-		if (s[i] == '(') {
-			count++;
-			flag = false;
-			if (i < stringSize && s[i + 1] == '+' || s[i + 1] == '*' || s[i + 1] == '/') {
-				throw "Operation after opening bracket";
-			}
-			if (i > 0 && s[i - 1] >= '0' && s[i] <= '9') {
-				throw "Number before opening bracket";
-			}
-		}
-		if (s[i] == ')') {
-			count--;
-			flag = true;
-		}
-	}
-	return (flag == true && count == 0);
-}
-bool checkSymbols(const string &s)
-{
-	bool flag = false;
-	int stringSize = s.length(), allowedTermsSize = allowedTerms.length();
-	for (int i = 0; i < stringSize; i++) {
-		for (int j = 0; j < allowedTermsSize; j++) {
-			if (s[i] != allowedTerms[j]) {
-				flag = false;
-				continue;
-			}
-			else {
-				flag = true;
-				break;
-			}
-		}
-		if (flag)
-			continue;
-		else return false;
-	}
-	return true;
-}
-bool isCorrect(const string &s)
-{
-	if (!checkBrackets(s)) {
-		throw "Bracket in your expression are wrong";
-	}
-	else if (!checkSymbols(s)) {
-		throw "You should use only allowed symbols: 0123456789.()+-/* ";
-	}
-	else if (s[0] == '+' || s[0] == '*' || s[0] == '/') {
-		throw "Operation is on the first place in the expression";
-	}
-	else if (s[s.length() - 1] == '+' || s[s.length() - 1] == '-' || s[s.length() - 1] == '*' || s[s.length() - 1] == '/') {
-		throw "Operation is at the end of the expression";
-	}
-	else return true;
-}
-int Term::priority()
-{
-	if (operation == '(' || operation == ')') { return 0; }
-	else if (operation == '+' || operation == '-') { return 1; }
-	else if (operation == '*' || operation == '/') { return 2; }
-	else if (operation == '_') { return 3; }
-	else throw "Priority problem";
 }

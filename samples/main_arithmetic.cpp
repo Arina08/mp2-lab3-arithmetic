@@ -6,23 +6,40 @@ using namespace std;
 int main()
 {
 	string s;
-	cout << "Input your sample" << endl;
+	cout << "Calculator" << endl;
 	for (int i = 0; i < 100; i++) {
+		cout << "Enter the expression: ";
 		try {
 			getline(cin, s);
-			isCorrect(s);
-			Arithmetic res;
-			res.stringToTerm(s);
-			res.print();
-			cout << endl;
-			res.termToPostfix();
-			res.print();
-			cout << endl;
-			double result = res.calculate();
-			cout << "Result: " << result;
-			cout << endl;
+			Arithmetic res(s);
+			bool same = true;
+			do {
+				bool ok = false;
+				double result = res.calculate();
+				cout << "Result : " << result << endl;
+				if (res.hasVariables() == false)
+					same = false;
+				else {
+					do {
+						string choose;
+						cout << "Continue with this expression? (Yes/No): ";
+						getline(cin,choose);
+						if (choose == "Yes") {
+							same = true;
+							ok = true;
+						}
+						else if (choose == "No") {
+							same = false;
+							ok = true;
+						}
+						else {
+							cout << "Incorrect answer, enter again" << endl;
+						}
+					} while (!ok);
+				}
+			} while (same);
 		}
-		catch (char* smth) {
+		catch (const char* smth) {
 			cout << smth << endl;
 		}
 		cout << endl;

@@ -2,40 +2,48 @@
 #include <vector>
 #include <iostream>
 #include "stack.h"
+#include <set>
 
 using std::string;
 using std::vector;
-
-const string allowedTerms = "0123456789.()+-/* ";
+using std::set;
 
 class Term
 {
 private:
 	char operation;
-	double isValue;
-	bool isType;
+	double value;
+	bool IsValue;
+	string variableName;
 public:
 	Term() = default;
-	Term(const double &_isValue) {
-		isValue = _isValue;
-		isType = true;
+	Term(const double &_value) {
+		value = _value;
+		IsValue = true;
 	}
 	Term(const char &_operation) {
 		operation = _operation;
-		isType = false;
+		IsValue = false;
+	}
+	Term(const string &varName) {
+		variableName = varName;
+		IsValue = true;
 	}
 	void printTerm() {
-		if (isType) {
-			std::cout << isValue << " ";
+		if (IsValue) {
+			std::cout << value << " ";
 		}
 		else {
 			std::cout << operation << " ";
 		}
 	}
-	double getValue() { return isValue; }
+	double getValue() { return value; }
 	char getOperation() { return operation; }
-	bool getType() { return isType; }
-
+	bool isValue() { return IsValue; }
+	string getVariableName() { return variableName; }
+	void SetValue(double Value) {
+		value = Value;
+	}
 	int priority();
 };
 
@@ -43,11 +51,13 @@ class Arithmetic
 {
 private:
 	vector<Term> terms;
-public:
-	Arithmetic() = default;
-
-	void stringToTerm(string &expression);
+	set<string> variables;
+	void stringToTerm(const string &expression = "");
+	void isCorrect();
 	void termToPostfix();
+public:
+	Arithmetic(const string &expression = "");
+	bool hasVariables();
 	double calculate();
 	void print() {
 		for (size_t i = 0; i < terms.size(); i++) {
@@ -57,6 +67,3 @@ public:
 	}
 };
 
-bool checkBrackets(const string &s);
-bool checkSymbols(const string &s);
-bool isCorrect(const string &s);
